@@ -322,7 +322,7 @@
   };
 
   /**
-   * Track the course site and course site usage using MixPanel
+   * Track the course site and course tool usage using MixPanel
    */
   (function() {
     // Only add mixpanel tracking to the production, beta and test instances
