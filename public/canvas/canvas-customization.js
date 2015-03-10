@@ -322,6 +322,64 @@
   };
 
   /**
+   * Track the course site and course site usage using MixPanel
+   */
+  (function() {
+    // Only add mixpanel tracking to the production, beta and test instances
+    var mixpanelToken = null;
+    if (window.location.hostname === 'bcourses.berkeley.edu') {
+      mixpanelToken = '743f85e7144a2ae9814e27e28743274b';
+    } else if (window.location.hostname == 'ucberkeley.beta.instructure.com') {
+      mixpanelToken = '72d3ecff15b895164af01a44c7164f6f';
+    } else if (window.location.hostname == 'localhost') {
+      mixpanelToken = '1d33662a9696685d25f589007c5dc018';
+    }
+
+    if (mixpanelToken) {
+      // Add the MixPanel tracking script
+      (function(f,b){if(!b.__SV){var a,e,i,g;window.mixpanel=b;b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.set_once people.increment people.append people.track_charge people.clear_charges people.delete_user".split(" ");for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=f.createElement("script");a.type="text/javascript";a.async=!0;a.src="//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";e=f.getElementsByTagName("script")[0];e.parentNode.insertBefore(a,e)}})(document,window.mixpanel||[]);mixpanel.init(mixpanelToken);
+
+      // When the user is in a course context, `context_asset_string` will be of the
+      // form `course_<courseid>. If the user is in a personal context, `context_asset_string`
+      // will be of the form `user_<userid>`. We determine which context we're in to allow us
+      // to send the appropriate event
+      var context = ENV.context_asset_string;
+      if (context) {
+        context = context.split('_');
+
+        // Track the user under its canvas user id
+        mixpanel.identify(ENV.current_user_id);
+
+        // Personal context tracking
+        if (context[0] === 'user') {
+          mixpanel.track('Personal Space');
+        // Course context tracking
+        } else if (context[0] === 'course') {
+          // Request additional information about the current course
+          $.ajax({
+            'url': '/api/v1/courses/' + context[1],
+            'success': function(course) {
+              // Determine the currently active tool
+              var currentTool = $('#left-side li > a.active');
+              // Determine whether the current tool is an LTI tool
+              var isLTITool = (currentTool.attr('href').indexOf('/external_tools/') !== -1);
+              // Track the user's visit to the current tool in the current course
+              mixpanel.track('Course Tool', {
+                course_id: course.id,
+                course_account: course.account_id,
+                course_term: course.enrollment_term_id,
+                course_role: course.enrollments[0].type,
+                tool_name: currentTool.text(),
+                tool_lti: isLTITool
+              });
+            }
+          });
+        }
+      }
+    }
+  })();
+
+  /**
    * bCourses customizations
    */
   $(document).ready(function() {
