@@ -326,6 +326,8 @@
    */
   (function() {
     // Only add mixpanel tracking to the production, beta and test instances
+    // TODO: Once we have decided that we want to continue working with MixPanel,
+    // these tokens should be retrieved from a dedicated REST endpoint
     var mixpanelToken = null;
     if (window.location.hostname === 'bcourses.berkeley.edu') {
       mixpanelToken = '743f85e7144a2ae9814e27e28743274b';
